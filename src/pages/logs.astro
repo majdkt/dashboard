@@ -1,0 +1,61 @@
+---
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+---
+<DashboardLayout title="Logs" activePage="logs">
+  <div class="section-title mb-4">Container Logs</div>
+
+  <div class="flex gap-4 mb-6">
+    <select id="source-select" class="btn btn-ghost" style="appearance:auto;min-width:200px">
+      <option value="">Select a container…</option>
+    </select>
+    <select id="tail-select" class="btn btn-ghost btn-sm" style="appearance:auto">
+      <option value="50">Last 50 lines</option>
+      <option value="100" selected>Last 100 lines</option>
+      <option value="200">Last 200 lines</option>
+      <option value="500">Last 500 lines</option>
+    </select>
+    <button id="fetch-btn" class="btn btn-primary btn-sm">Fetch Logs</button>
+  </div>
+
+  <div class="card">
+    <div id="log-output" class="log-block" style="min-height:300px">
+      <span style="color:#475569">Select a container above and click Fetch Logs.</span>
+    </div>
+  </div>
+</DashboardLayout>
+
+<script>
+  import { api } from '../lib/api.ts';
+
+  async function loadSources() {
+    try {
+      const { sources } = await api.logs.sources();
+      const sel = document.getElementById('source-select') as HTMLSelectElement;
+      sources.forEach(s => {
+        const opt = document.createElement('option');
+        opt.value = s.id;
+        opt.textContent = `${s.name} (${s.state})`;
+        sel.appendChild(opt);
+      });
+    } catch {}
+  }
+
+  document.getElementById('fetch-btn')?.addEventListener('click', async () => {
+    const id = (document.getElementById('source-select') as HTMLSelectElement).value;
+    const tail = parseInt((document.getElementById('tail-select') as HTMLSelectElement).value);
+    const out = document.getElementById('log-output')!;
+
+    if (!id) { out.textContent = 'Please select a container.'; return; }
+
+    out.innerHTML = '<span style="color:#94a3b8">Fetching…</span>';
+    try {
+      const { lines } = await api.logs.tail(id, tail);
+      out.textContent = lines.join('\n') || '(no output)';
+      out.scrollTop = out.scrollHeight;
+    } catch (e: any) {
+      out.innerHTML = `<span style="color:#f87171">Error: ${e.message}</span>`;
+    }
+  });
+
+  loadSources();
+</script>

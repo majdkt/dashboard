@@ -1,0 +1,166 @@
+---
+// src/pages/index.astro – Overview dashboard
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+---
+
+<DashboardLayout title="Overview" activePage="overview">
+
+  <!-- Stat cards populated by client-side JS -->
+  <div class="stat-grid" id="stat-grid">
+    <div class="stat-card">
+      <div class="stat-label">CPU Load</div>
+      <div class="stat-value" id="cpu-load">—</div>
+      <div class="stat-sub" id="cpu-model">Loading…</div>
+      <div class="progress-bar"><div class="progress-fill" id="cpu-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Memory</div>
+      <div class="stat-value" id="mem-used">—</div>
+      <div class="stat-sub" id="mem-detail">Loading…</div>
+      <div class="progress-bar"><div class="progress-fill" id="mem-bar" style="width:0%"></div></div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Uptime</div>
+      <div class="stat-value" id="uptime">—</div>
+      <div class="stat-sub" id="os-info">Loading…</div>
+    </div>
+
+    <div class="stat-card">
+      <div class="stat-label">Containers</div>
+      <div class="stat-value" id="container-count">—</div>
+      <div class="stat-sub" id="container-sub">Loading…</div>
+    </div>
+  </div>
+
+  <!-- Disk usage -->
+  <div class="card mb-6" id="disk-card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2H2V4ZM2 9h16v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9Zm9 2a1 1 0 1 0 0 2h2a1 1 0 1 0 0-2h-2Z"/></svg>
+          Disk Usage
+        </div>
+      </div>
+    </div>
+    <div id="disk-list">
+      <div class="loading-state"><span class="spinner"></span> Loading…</div>
+    </div>
+  </div>
+
+  <!-- Running containers overview -->
+  <div class="card">
+    <div class="card-header">
+      <div>
+        <div class="card-title">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2 3a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3Z"/></svg>
+          Running Containers
+        </div>
+      </div>
+      <a href="/containers" class="btn btn-ghost btn-sm">View all →</a>
+    </div>
+    <div id="overview-containers">
+      <div class="loading-state"><span class="spinner"></span> Loading…</div>
+    </div>
+  </div>
+
+</DashboardLayout>
+
+<script>
+  import { api } from '../lib/api.ts';
+
+  function fmt(bytes: number) {
+    const gb = bytes / 1024 / 1024 / 1024;
+    return gb >= 1 ? `${gb.toFixed(1)} GB` : `${(bytes / 1024 / 1024).toFixed(0)} MB`;
+  }
+
+  function fillProgress(el: HTMLElement | null, pct: number) {
+    if (!el) return;
+    el.style.width = `${pct}%`;
+    el.classList.toggle('warn', pct >= 70 && pct < 90);
+    el.classList.toggle('danger', pct >= 90);
+  }
+
+  async function loadSystem() {
+    try {
+      const { cpu, memory, uptime, os, disk } = await api.system.info();
+
+      // CPU
+      (document.getElementById('cpu-load')!).textContent = `${cpu.loadPercent}%`;
+      (document.getElementById('cpu-model')!).textContent = `${cpu.model} · ${cpu.cores} cores`;
+      fillProgress(document.getElementById('cpu-bar'), cpu.loadPercent);
+
+      // Memory
+      (document.getElementById('mem-used')!).textContent = fmt(memory.used);
+      (document.getElementById('mem-detail')!).textContent =
+        `${fmt(memory.used)} / ${fmt(memory.total)} · ${memory.usedPercent}%`;
+      fillProgress(document.getElementById('mem-bar'), memory.usedPercent);
+
+      // Uptime
+      (document.getElementById('uptime')!).textContent = uptime.human;
+      (document.getElementById('os-info')!).textContent =
+        `${os.distro} ${os.release} · ${os.hostname}`;
+
+      // Disk
+      const diskHtml = disk.map(d => `
+        <div style="margin-bottom:var(--space-4)">
+          <div class="flex items-center justify-between" style="margin-bottom:4px">
+            <span class="text-sm" style="font-weight:500">${d.mount}</span>
+            <span class="text-xs text-muted">${fmt(d.used)} / ${fmt(d.size)} (${d.use}%)</span>
+          </div>
+          <div class="progress-bar">
+            <div class="progress-fill ${d.use >= 90 ? 'danger' : d.use >= 70 ? 'warn' : ''}"
+                 style="width:${d.use}%"></div>
+          </div>
+        </div>
+      `).join('');
+      document.getElementById('disk-list')!.innerHTML = diskHtml || '<p class="text-muted text-sm">No disk data.</p>';
+
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  async function loadContainers() {
+    try {
+      const { containers } = await api.containers.list();
+
+      const running = containers.filter(c => c.state === 'running');
+      (document.getElementById('container-count')!).textContent = `${running.length}/${containers.length}`;
+      (document.getElementById('container-sub')!).textContent =
+        `${running.length} running · ${containers.length - running.length} stopped`;
+
+      if (running.length === 0) {
+        document.getElementById('overview-containers')!.innerHTML =
+          '<p class="text-muted text-sm" style="padding:var(--space-4)">No running containers.</p>';
+        return;
+      }
+
+      const rows = running.slice(0, 6).map(c => `
+        <tr>
+          <td class="td-name">${c.name || c.id}</td>
+          <td class="td-mono">${c.image}</td>
+          <td><span class="badge ${c.state}">${c.state}</span></td>
+          <td class="td-mono">${c.status}</td>
+        </tr>
+      `).join('');
+
+      document.getElementById('overview-containers')!.innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Name</th><th>Image</th><th>State</th><th>Status</th>
+            </tr></thead>
+            <tbody>${rows}</tbody>
+          </table>
+        </div>
+      `;
+    } catch (e) {
+      console.error(e);
+    }
+  }
+
+  loadSystem();
+  loadContainers();
+</script>

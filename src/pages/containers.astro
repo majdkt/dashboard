@@ -1,0 +1,169 @@
+---
+// src/pages/containers.astro – Full containers management view
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+---
+
+<DashboardLayout title="Containers" activePage="containers">
+
+  <div class="flex items-center justify-between mb-6">
+    <div>
+      <div class="section-title" style="margin-bottom:2px">Docker Containers</div>
+      <p class="text-sm text-muted">Manage all containers on this host.</p>
+    </div>
+    <div class="flex gap-3">
+      <select id="filter-state" class="btn btn-ghost btn-sm" style="appearance:auto">
+        <option value="all">All states</option>
+        <option value="running">Running</option>
+        <option value="exited">Exited</option>
+        <option value="paused">Paused</option>
+      </select>
+    </div>
+  </div>
+
+  <div class="card">
+    <div id="containers-table">
+      <div class="loading-state"><span class="spinner"></span> Fetching containers…</div>
+    </div>
+  </div>
+
+  <!-- Action toast -->
+  <div id="toast" style="
+    position:fixed;bottom:24px;right:24px;
+    background:#111827;color:#fff;
+    padding:10px 18px;border-radius:10px;
+    font-size:0.875rem;font-weight:500;
+    box-shadow:0 8px 24px rgb(0 0 0/.25);
+    opacity:0;transition:opacity .2s;
+    pointer-events:none;z-index:100;
+  "></div>
+
+</DashboardLayout>
+
+<script>
+  import { api, type Container } from '../lib/api.ts';
+
+  let allContainers: Container[] = [];
+
+  function showToast(msg: string) {
+    const t = document.getElementById('toast')!;
+    t.textContent = msg;
+    t.style.opacity = '1';
+    setTimeout(() => { t.style.opacity = '0'; }, 2800);
+  }
+
+  function ports(container: Container): string {
+    if (!container.ports.length) return '—';
+    return container.ports
+      .filter(p => p.PublicPort)
+      .map(p => `${p.PublicPort}:${p.PrivatePort}`)
+      .join(', ') || '—';
+  }
+
+  function renderTable(containers: Container[]) {
+    const tbody = document.getElementById('containers-tbody');
+    if (!tbody) return;
+
+    if (containers.length === 0) {
+      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--c-text-muted);padding:var(--space-8)">No containers found.</td></tr>`;
+      return;
+    }
+
+    tbody.innerHTML = containers.map(c => `
+      <tr data-id="${c.id}">
+        <td>
+          <div class="td-name">${c.name || '—'}</div>
+          <div class="td-mono" style="margin-top:2px">${c.id}</div>
+        </td>
+        <td class="td-mono">${c.image}</td>
+        <td><span class="badge ${c.state}">${c.state}</span></td>
+        <td class="text-muted text-xs">${c.status}</td>
+        <td class="td-mono">${ports(c)}</td>
+        <td>
+          <div class="flex gap-2">
+            ${c.state !== 'running' ? `
+              <button class="btn btn-sm btn-ghost action-btn"
+                      data-action="start" data-id="${c.id}"
+                      title="Start">
+                ▶ Start
+              </button>` : ''}
+            ${c.state === 'running' ? `
+              <button class="btn btn-sm btn-danger-ghost action-btn"
+                      data-action="stop" data-id="${c.id}"
+                      title="Stop">
+                ■ Stop
+              </button>` : ''}
+            <button class="btn btn-sm btn-ghost action-btn"
+                    data-action="restart" data-id="${c.id}"
+                    title="Restart">
+              ↺ Restart
+            </button>
+          </div>
+        </td>
+      </tr>
+    `).join('');
+
+    // Attach action handlers
+    tbody.querySelectorAll('.action-btn').forEach(btn => {
+      btn.addEventListener('click', async (e) => {
+        const el = e.currentTarget as HTMLButtonElement;
+        const action = el.dataset.action as 'start' | 'stop' | 'restart';
+        const id = el.dataset.id!;
+        el.disabled = true;
+        el.textContent = '…';
+
+        try {
+          await api.containers[action](id);
+          showToast(`✓ Container ${action}ed`);
+          await load();
+        } catch (err: any) {
+          showToast(`✗ ${err.message}`);
+          el.disabled = false;
+        }
+      });
+    });
+  }
+
+  function applyFilter() {
+    const state = (document.getElementById('filter-state') as HTMLSelectElement).value;
+    const filtered = state === 'all'
+      ? allContainers
+      : allContainers.filter(c => c.state === state);
+    renderTable(filtered);
+  }
+
+  async function load() {
+    try {
+      const { containers } = await api.containers.list();
+      allContainers = containers.sort((a, b) => {
+        // Running first
+        if (a.state === 'running' && b.state !== 'running') return -1;
+        if (a.state !== 'running' && b.state === 'running') return 1;
+        return a.name.localeCompare(b.name);
+      });
+
+      document.getElementById('containers-table')!.innerHTML = `
+        <div class="table-wrap">
+          <table>
+            <thead><tr>
+              <th>Name / ID</th>
+              <th>Image</th>
+              <th>State</th>
+              <th>Status</th>
+              <th>Ports</th>
+              <th>Actions</th>
+            </tr></thead>
+            <tbody id="containers-tbody"></tbody>
+          </table>
+        </div>
+      `;
+
+      applyFilter();
+    } catch (err: any) {
+      document.getElementById('containers-table')!.innerHTML =
+        `<div class="error-state">⚠ Failed to load containers: ${err.message}</div>`;
+    }
+  }
+
+  document.getElementById('filter-state')?.addEventListener('change', applyFilter);
+  load();
+</script>

@@ -1,0 +1,134 @@
+---
+// src/layouts/DashboardLayout.astro
+// Shell that wraps all pages: sidebar + topbar + main content slot
+import '../styles/global.css';
+
+interface Props {
+  title: string;
+  activePage?: string;
+}
+
+const { title, activePage } = Astro.props;
+
+const nav = [
+  {
+    label: 'Core',
+    items: [
+      { href: '/',            label: 'Overview',    icon: 'grid',      id: 'overview' },
+      { href: '/containers',  label: 'Containers',  icon: 'box',       id: 'containers' },
+    ],
+  },
+  {
+    label: 'Coming soon',
+    items: [
+      { href: '/logs',        label: 'Logs',        icon: 'scroll',    id: 'logs',   soon: true },
+      { href: '/system',      label: 'System',      icon: 'cpu',       id: 'system', soon: true },
+    ],
+  },
+];
+
+const icons: Record<string, string> = {
+  grid: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M3 3a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1H3ZM3 11a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1H3ZM11 3a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1V4a1 1 0 0 0-1-1h-4ZM11 11a1 1 0 0 0-1 1v4a1 1 0 0 0 1 1h4a1 1 0 0 0 1-1v-4a1 1 0 0 0-1-1h-4Z" clip-rule="evenodd"/></svg>`,
+  box: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2 3a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3Zm10.293 1.293a1 1 0 1 0-1.414 1.414L12.586 7H7a1 1 0 1 0 0 2h5.586l-1.707 1.707a1 1 0 1 0 1.414 1.414l3.414-3.414a1 1 0 0 0 0-1.414l-3.414-3z"/></svg>`,
+  scroll: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 4.75A2.75 2.75 0 0 1 4.75 2h10.5A2.75 2.75 0 0 1 18 4.75v10.5A2.75 2.75 0 0 1 15.25 18H4.75A2.75 2.75 0 0 1 2 15.25V4.75ZM5.5 6a.75.75 0 0 0 0 1.5h9a.75.75 0 0 0 0-1.5h-9ZM5.5 9.5a.75.75 0 0 0 0 1.5H10a.75.75 0 0 0 0-1.5H5.5ZM5.5 13a.75.75 0 0 0 0 1.5h4a.75.75 0 0 0 0-1.5H5.5Z" clip-rule="evenodd"/></svg>`,
+  cpu: `<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M14 6H6v8h8V6Z"/><path fill-rule="evenodd" d="M9.25 3V1.75a.75.75 0 0 1 1.5 0V3h1.5V1.75a.75.75 0 0 1 1.5 0V3h.5A2.75 2.75 0 0 1 17 5.75v.5h1.25a.75.75 0 0 1 0 1.5H17v1.5h1.25a.75.75 0 0 1 0 1.5H17v1.5h1.25a.75.75 0 0 1 0 1.5H17v.5A2.75 2.75 0 0 1 14.25 17h-.5v1.25a.75.75 0 0 1-1.5 0V17h-1.5v1.25a.75.75 0 0 1-1.5 0V17h-1.5v1.25a.75.75 0 0 1-1.5 0V17h-.5A2.75 2.75 0 0 1 3 14.25v-.5H1.75a.75.75 0 0 1 0-1.5H3v-1.5H1.75a.75.75 0 0 1 0-1.5H3v-1.5H1.75a.75.75 0 0 1 0-1.5H3v-.5A2.75 2.75 0 0 1 5.75 3h.5V1.75a.75.75 0 0 1 1.5 0V3h1.5ZM4.5 5.75c0-.69.56-1.25 1.25-1.25h8.5c.69 0 1.25.56 1.25 1.25v8.5c0 .69-.56 1.25-1.25 1.25h-8.5c-.69 0-1.25-.56-1.25-1.25v-8.5Z" clip-rule="evenodd"/></svg>`,
+};
+---
+
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="Teze – personal homelab server control dashboard" />
+    <title>{title} · Teze</title>
+    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
+  </head>
+  <body>
+    <div class="app-shell">
+
+      <!-- ── Sidebar ─────────────────────────────────────────────────────── -->
+      <aside class="sidebar">
+        <div class="sidebar-logo">
+          <div class="sidebar-logo-icon">T</div>
+          <div>
+            <div class="sidebar-logo-text">Teze</div>
+            <div class="sidebar-logo-sub">Homelab Control</div>
+          </div>
+        </div>
+
+        <nav class="sidebar-nav">
+          {nav.map(section => (
+            <>
+              <div class="nav-section-label">{section.label}</div>
+              {section.items.map(item => (
+                <a
+                  href={item.href}
+                  class={`nav-link ${activePage === item.id ? 'active' : ''}`}
+                >
+                  <span set:html={icons[item.icon]} />
+                  {item.label}
+                  {item.soon && <span class="nav-badge soon">soon</span>}
+                </a>
+              ))}
+            </>
+          ))}
+        </nav>
+
+        <div class="sidebar-footer">
+          <div class="sidebar-footer-text">
+            Teze v0.1.0 · homelab
+          </div>
+        </div>
+      </aside>
+
+      <!-- ── Topbar ──────────────────────────────────────────────────────── -->
+      <header class="topbar">
+        <h1 class="topbar-title">{title}</h1>
+        <div class="topbar-actions">
+          <span id="connection-status" class="badge exited">Connecting…</span>
+          <button class="btn btn-ghost btn-sm" id="refresh-btn" title="Refresh data">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+              <path fill-rule="evenodd" d="M15.312 11.424a5.5 5.5 0 0 1-9.201 2.466l-.312-.311h2.433a.75.75 0 0 0 0-1.5H3.989a.75.75 0 0 0-.75.75v4.242a.75.75 0 0 0 1.5 0v-2.43l.31.31a7 7 0 0 0 11.712-3.138.75.75 0 0 0-1.449-.39Zm1.23-3.723a.75.75 0 0 0 .219-.53V2.929a.75.75 0 0 0-1.5 0V5.36l-.31-.31A7 7 0 0 0 3.239 8.188a.75.75 0 1 0 1.448.389A5.5 5.5 0 0 1 13.89 6.11l.311.31h-2.432a.75.75 0 0 0 0 1.5h4.243a.75.75 0 0 0 .53-.219Z" clip-rule="evenodd"/>
+            </svg>
+            Refresh
+          </button>
+        </div>
+      </header>
+
+      <!-- ── Main ───────────────────────────────────────────────────────── -->
+      <main class="main-content">
+        <slot />
+      </main>
+    </div>
+
+    <script>
+      // Health probe to show API connection status
+      async function checkHealth() {
+        const el = document.getElementById('connection-status');
+        if (!el) return;
+        try {
+          const res = await fetch(
+            (import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001') + '/health',
+            { signal: AbortSignal.timeout(4000) }
+          );
+          if (res.ok) {
+            el.textContent = 'API online';
+            el.className = 'badge running';
+          } else {
+            throw new Error();
+          }
+        } catch {
+          el.textContent = 'API offline';
+          el.className = 'badge error';
+        }
+      }
+
+      checkHealth();
+
+      document.getElementById('refresh-btn')?.addEventListener('click', () => {
+        window.location.reload();
+      });
+    </script>
+  </body>
+</html>
