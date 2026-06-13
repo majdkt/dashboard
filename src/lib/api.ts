@@ -44,6 +44,8 @@ export interface SystemInfo {
     threads: number;
     speed: number;
     loadPercent: number;
+    loadPerCore: number[];
+    temp: number | null;
   };
   memory: {
     total: number;
@@ -60,12 +62,21 @@ export interface SystemInfo {
     hostname: string;
   };
   disk: { fs: string; mount: string; size: number; used: number; use: number }[];
+  network: { iface: string; ip4: string; speed: number; dhcp: boolean; mac: string }[];
+  gpu: { vendor: string; model: string; vram: number; temp: number | null }[];
+  pingLatency: number | null;
 }
 
 export interface LogSource {
   id: string;
   name: string;
   state: string;
+}
+
+export interface DiagnosticResult {
+  commandId: string;
+  command: string;
+  output: string;
 }
 
 // ── API Methods ───────────────────────────────────────────────────────────────
@@ -79,9 +90,18 @@ export const api = {
       apiFetch<{ ok: boolean }>(`/api/containers/${id}/stop`, { method: 'POST' }),
     restart: (id: string) =>
       apiFetch<{ ok: boolean }>(`/api/containers/${id}/restart`, { method: 'POST' }),
+    remove: (id: string) =>
+      apiFetch<{ ok: boolean }>(`/api/containers/${id}/remove`, { method: 'POST' }),
+    prune: () =>
+      apiFetch<{ ok: boolean; pruned: any }>('/api/containers/prune', { method: 'POST' }),
   },
   system: {
     info: () => apiFetch<SystemInfo>('/api/system'),
+    diagnostics: (commandId: string) =>
+      apiFetch<DiagnosticResult>('/api/system/diagnostics', {
+        method: 'POST',
+        body: JSON.stringify({ commandId }),
+      }),
   },
   logs: {
     sources: () => apiFetch<{ sources: LogSource[] }>('/api/logs'),
@@ -89,3 +109,4 @@ export const api = {
       apiFetch<{ id: string; lines: string[] }>(`/api/logs/${id}?tail=${tail}`),
   },
 };
+

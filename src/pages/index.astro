@@ -1,67 +1,207 @@
 ---
-// src/pages/index.astro – Overview dashboard
+// src/pages/index.astro – Apple UI inspired Overview Dashboard
 import DashboardLayout from '../layouts/DashboardLayout.astro';
 ---
 
 <DashboardLayout title="Overview" activePage="overview">
 
-  <!-- Stat cards populated by client-side JS -->
-  <div class="stat-grid" id="stat-grid">
-    <div class="stat-card">
-      <div class="stat-label">CPU Load</div>
-      <div class="stat-value" id="cpu-load">—</div>
-      <div class="stat-sub" id="cpu-model">Loading…</div>
-      <div class="progress-bar"><div class="progress-fill" id="cpu-bar" style="width:0%"></div></div>
-    </div>
+  <!-- Bento Grid Vitals -->
+  <div class="bento-grid">
 
-    <div class="stat-card">
-      <div class="stat-label">Memory</div>
-      <div class="stat-value" id="mem-used">—</div>
-      <div class="stat-sub" id="mem-detail">Loading…</div>
-      <div class="progress-bar"><div class="progress-fill" id="mem-bar" style="width:0%"></div></div>
-    </div>
+    <!-- ── SYSTEM VITALS DECK ── -->
+    <div class="panel col-4">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2 11a1 1 0 011-1h2a1 1 0 011 1v5a1 1 0 01-1 1H3a1 1 0 01-1-1v-5zm6-4a1 1 0 011-1h2a1 1 0 011 1v9a1 1 0 01-1 1H9a1 1 0 01-1-1V7zm6-3a1 1 0 011-1h2a1 1 0 011 1v12a1 1 0 01-1 1h-2a1 1 0 01-1-1V4z"/></svg>
+          System Vitals
+        </div>
+      </div>
+      <div class="flex justify-between" style="gap:24px;margin-top:20px">
+        <!-- CPU Loop -->
+        <div class="reactor-widget" style="flex:1">
+          <div class="reactor-container" style="width:90px;height:90px">
+            <svg viewBox="0 0 100 100" class="reactor-svg">
+              <circle cx="50" cy="50" r="40" class="reactor-track"></circle>
+              <circle cx="50" cy="50" r="40" class="reactor-fill cpu" id="cpu-reactor-fill"></circle>
+            </svg>
+            <div class="reactor-data">
+              <span class="reactor-val" id="cpu-reactor-val" style="font-size:16px">—</span>
+            </div>
+          </div>
+          <div class="reactor-label" style="font-size:12px;margin-bottom:2px">CPU Core</div>
+          <div style="font-size:10px;color:var(--apple-gray)" id="cpu-cores">—</div>
+        </div>
 
-    <div class="stat-card">
-      <div class="stat-label">Uptime</div>
-      <div class="stat-value" id="uptime">—</div>
-      <div class="stat-sub" id="os-info">Loading…</div>
-    </div>
-
-    <div class="stat-card">
-      <div class="stat-label">Containers</div>
-      <div class="stat-value" id="container-count">—</div>
-      <div class="stat-sub" id="container-sub">Loading…</div>
-    </div>
-  </div>
-
-  <!-- Disk usage -->
-  <div class="card mb-6" id="disk-card">
-    <div class="card-header">
-      <div>
-        <div class="card-title">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2 4a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v2H2V4ZM2 9h16v7a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V9Zm9 2a1 1 0 1 0 0 2h2a1 1 0 1 0 0-2h-2Z"/></svg>
-          Disk Usage
+        <!-- RAM Loop -->
+        <div class="reactor-widget" style="flex:1">
+          <div class="reactor-container" style="width:90px;height:90px">
+            <svg viewBox="0 0 100 100" class="reactor-svg">
+              <circle cx="50" cy="50" r="40" class="reactor-track"></circle>
+              <circle cx="50" cy="50" r="40" class="reactor-fill ram" id="ram-reactor-fill"></circle>
+            </svg>
+            <div class="reactor-data">
+              <span class="reactor-val" id="ram-reactor-val" style="font-size:16px">—</span>
+            </div>
+          </div>
+          <div class="reactor-label" style="font-size:12px;margin-bottom:2px">Memory</div>
+          <div style="font-size:10px;color:var(--apple-gray)" id="ram-detail-val">—</div>
         </div>
       </div>
     </div>
-    <div id="disk-list">
-      <div class="loading-state"><span class="spinner"></span> Loading…</div>
-    </div>
-  </div>
 
-  <!-- Running containers overview -->
-  <div class="card">
-    <div class="card-header">
-      <div>
-        <div class="card-title">
-          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2 3a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v14a1 1 0 0 1-1 1H3a1 1 0 0 1-1-1V3Z"/></svg>
-          Running Containers
+    <!-- ── NETWORK & CONNECTIVITY ── -->
+    <div class="panel col-4">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M17.707 9.293a1 1 0 010 1.414l-7 7a1 1 0 01-1.414 0l-7-7a1 1 0 011.414-1.414L10 14.586l6.293-6.293a1 1 0 011.414 0z" clip-rule="evenodd"/></svg>
+          Network Latency
         </div>
       </div>
-      <a href="/containers" class="btn btn-ghost btn-sm">View all →</a>
+      
+      <div style="margin-bottom:12px">
+        <div class="latency-wave-container" id="latency-bars">
+          <!-- Populated by script -->
+        </div>
+        <div class="flex justify-between" style="font-size:11px;margin-top:4px;color:var(--c-text-secondary)">
+          <span>Ping (1.1.1.1)</span>
+          <span id="latency-value" style="color:var(--apple-blue);font-weight:600">Testing...</span>
+        </div>
+      </div>
+
+      <div class="table-viewport" style="max-height:80px;border-color:var(--c-border)">
+        <table class="readout-table">
+          <tbody id="net-interfaces-tbody">
+            <tr><td style="color:var(--c-text-secondary);font-size:12px;padding:10px">Loading network adapters…</td></tr>
+          </tbody>
+        </table>
+      </div>
     </div>
-    <div id="overview-containers">
-      <div class="loading-state"><span class="spinner"></span> Loading…</div>
+
+    <!-- ── PORTALS DECK (BOOKMARKS) ── -->
+    <div class="panel col-4">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M12.586 3L17 7.414V17a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h7.586zM11 5v4h4v-4h-4z" clip-rule="evenodd"/></svg>
+          Quick Links
+        </div>
+      </div>
+      <div class="bookmarks-grid" id="bookmarks-container" style="max-height:160px;overflow-y:auto;grid-template-columns:repeat(2, 1fr);gap:10px">
+        <!-- Bookmark portals -->
+      </div>
+    </div>
+
+    <!-- ── DIAGNOSTICS CELLS (iOS Settings style) ── -->
+    <div class="panel col-6">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M11.49 3.17c-.38-1.56-2.6-1.56-2.98 0a1.532 1.532 0 0 1-2.286.948c-1.372-.836-2.942.734-2.106 2.106.54.886.061 2.042-.947 2.287-1.561.379-1.561 2.6 0 2.978a1.533 1.533 0 0 1 .947 2.287c-.836 1.372.734 2.942 2.106 2.106a1.533 1.533 0 0 1 2.287.947c.379 1.561 2.6 1.561 2.978 0a1.533 1.533 0 0 1 2.287-.947c1.372.836 2.942-.734 2.106-2.106a1.533 1.533 0 0 1 .947-2.287c1.561-.379 1.561-2.6 0-2.978a1.532 1.532 0 0 1-.947-2.287c.836-1.372-.734-2.942-2.106-2.106a1.532 1.532 0 0 1-2.287-.947zM10 13a3 3 0 1 0 0-6 3 3 0 0 0 0 6z" clip-rule="evenodd"/></svg>
+          Diagnostics Console
+        </div>
+      </div>
+      
+      <!-- List cells instead of cyberpunk panels -->
+      <div class="settings-menu-list" style="margin-bottom:16px">
+        <div class="settings-row diag-trigger" data-cmd="storage">
+          <div class="settings-row-left">
+            <div class="settings-row-icon" style="background:#30D158">💾</div>
+            <span>Storage Allocation</span>
+          </div>
+          <div class="settings-row-right">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+          </div>
+        </div>
+        <div class="settings-row diag-trigger" data-cmd="memory">
+          <div class="settings-row-left">
+            <div class="settings-row-icon" style="background:#0A84FF">🧠</div>
+            <span>Memory Footprint</span>
+          </div>
+          <div class="settings-row-right">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+          </div>
+        </div>
+        <div class="settings-row diag-trigger" data-cmd="docker">
+          <div class="settings-row-left">
+            <div class="settings-row-icon" style="background:#5856D6">🐳</div>
+            <span>Docker Allocation</span>
+          </div>
+          <div class="settings-row-right">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+          </div>
+        </div>
+        <div class="settings-row diag-trigger" data-cmd="processes">
+          <div class="settings-row-left">
+            <div class="settings-row-icon" style="background:#FF9F0A">⚙️</div>
+            <span>CPU Active Processes</span>
+          </div>
+          <div class="settings-row-right">
+            <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.293 14.707a1 1 0 010-1.414L10.586 10 7.293 6.707a1 1 0 011.414-1.414l4 4a1 1 0 010 1.414l-4 4a1 1 0 01-1.414 0z" clip-rule="evenodd"/></svg>
+          </div>
+        </div>
+      </div>
+
+      <div class="terminal-block" id="diag-output" style="height:140px;max-height:140px;background:#000;border-color:rgba(255,255,255,0.05)">Select a diagnostic operation above.</div>
+    </div>
+
+    <!-- ── ACTIVE CONTAINERS MATRICES ── -->
+    <div class="panel col-6">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M2 5a2 2 0 012-2h12a2 2 0 012 2v10a2 2 0 01-2 2H4a2 2 0 01-2-2V5zm3 2a1 1 0 011-1h8a1 1 0 110 2H6a1 1 0 01-1-1zm1 3a1 1 0 100 2h8a1 1 0 100-2H6z" clip-rule="evenodd"/></svg>
+          Docker Core Status <span id="docker-matrix-count" style="font-size:11px;color:var(--apple-blue);margin-left:4px;font-weight:600"></span>
+        </div>
+        <a href="/containers" class="btn-deck btn-ghost" style="padding:4px 10px;font-size:11px">Manage →</a>
+      </div>
+
+      <div class="table-viewport" style="max-height:270px;overflow-y:auto">
+        <table class="readout-table">
+          <thead>
+            <tr>
+              <th>Module</th>
+              <th>Status</th>
+              <th>Control</th>
+            </tr>
+          </thead>
+          <tbody id="overview-containers-tbody">
+            <tr>
+              <td colspan="3" style="color:var(--c-text-secondary);text-align:center;padding:24px">Connecting to Docker…</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── BOOKMARK CONFIGURATION MODAL ── -->
+  <div class="cockpit-modal" id="bookmark-modal">
+    <div class="modal-content">
+      <div class="modal-title">Add Portal Shortcut</div>
+      <form id="bookmark-form" onsubmit="return false;">
+        <div class="form-group">
+          <label class="form-label">Portal Name</label>
+          <input type="text" id="bm-label" class="form-input" placeholder="e.g. Nextcloud" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">URL Endpoint</label>
+          <input type="url" id="bm-url" class="form-input" placeholder="e.g. http://192.168.1.100:8080" required />
+        </div>
+        <div class="form-group">
+          <label class="form-label">Portal Icon</label>
+          <select id="bm-icon" class="form-input" style="appearance:auto">
+            <option value="💻">💻 [Console]</option>
+            <option value="🎬">🎬 [Media]</option>
+            <option value="🏠">🏠 [Smart Home]</option>
+            <option value="📡">📡 [Network / DNS]</option>
+            <option value="🔒">🔒 [Security]</option>
+            <option value="📦">📦 [Storage]</option>
+            <option value="⚡">⚡ [Operations]</option>
+          </select>
+        </div>
+        <div class="flex gap-2 justify-between" style="margin-top:24px">
+          <button type="button" class="btn-deck btn-ghost" id="close-modal-btn">Cancel</button>
+          <button type="submit" class="btn-deck">Register Portal</button>
+        </div>
+      </form>
     </div>
   </div>
 
@@ -70,97 +210,271 @@ import DashboardLayout from '../layouts/DashboardLayout.astro';
 <script>
   import { api } from '../lib/api.ts';
 
-  function fmt(bytes: number) {
+  // Seed default bookmarks
+  const DEFAULT_BOOKMARKS = [
+    { label: 'Portainer', url: 'http://localhost:9000', icon: '⚡', desc: 'Docker Panel' },
+    { label: 'Plex', url: 'http://localhost:32400', icon: '🎬', desc: 'Media Registry' },
+    { label: 'Pi-hole', url: 'http://localhost:80/admin', icon: '📡', desc: 'Adblocker' },
+    { label: 'Home Hub', url: 'http://localhost:8123', icon: '🏠', desc: 'Home Panel' }
+  ];
+
+  // Helper to format bytes
+  function formatBytes(bytes: number) {
     const gb = bytes / 1024 / 1024 / 1024;
     return gb >= 1 ? `${gb.toFixed(1)} GB` : `${(bytes / 1024 / 1024).toFixed(0)} MB`;
   }
 
-  function fillProgress(el: HTMLElement | null, pct: number) {
+  // Update Activity Loop (Apple Watch style)
+  function setActivityLoop(id: string, percent: number) {
+    const el = document.getElementById(`${id}-reactor-fill`) as SVGCircleElement | null;
     if (!el) return;
-    el.style.width = `${pct}%`;
-    el.classList.toggle('warn', pct >= 70 && pct < 90);
-    el.classList.toggle('danger', pct >= 90);
+    
+    // Circumference of radius 40 is 251.3
+    const offset = 251.3 - (251.3 * Math.min(100, Math.max(0, percent))) / 100;
+    el.style.strokeDashoffset = String(offset);
   }
 
-  async function loadSystem() {
+  // Live ping history records
+  const pingHistory: number[] = [15, 12, 18, 14, 22, 10, 15, 16, 20, 14];
+
+  function drawLatencyHistory(latency: number) {
+    pingHistory.push(latency);
+    if (pingHistory.length > 18) pingHistory.shift();
+
+    const container = document.getElementById('latency-bars');
+    const valueEl = document.getElementById('latency-value');
+    if (valueEl) valueEl.textContent = `${latency}ms`;
+
+    if (!container) return;
+    
+    // Re-draw bars
+    const maxVal = Math.max(...pingHistory, 50);
+    container.innerHTML = pingHistory.map(p => {
+      const hPercent = Math.round((p / maxVal) * 100);
+      let colorStyle = '';
+      if (p > 50) colorStyle = 'background:var(--apple-red)';
+      else if (p > 25) colorStyle = 'background:var(--apple-orange)';
+      return `<div class="latency-bar" style="height:${hPercent}%; ${colorStyle}"></div>`;
+    }).join('');
+  }
+
+  // Bookmarks Manager
+  function loadBookmarks() {
+    const container = document.getElementById('bookmarks-container');
+    if (!container) return;
+
+    let bookmarks = [...DEFAULT_BOOKMARKS];
     try {
-      const { cpu, memory, uptime, os, disk } = await api.system.info();
+      const stored = localStorage.getItem('teze_bookmarks');
+      if (stored) {
+        bookmarks = [...bookmarks, ...JSON.parse(stored)];
+      }
+    } catch {}
 
-      // CPU
-      (document.getElementById('cpu-load')!).textContent = `${cpu.loadPercent}%`;
-      (document.getElementById('cpu-model')!).textContent = `${cpu.model} · ${cpu.cores} cores`;
-      fillProgress(document.getElementById('cpu-bar'), cpu.loadPercent);
+    const html = bookmarks.map((bm, index) => `
+      <a href="${bm.url}" target="_blank" class="bookmark-card">
+        <div class="bookmark-icon-box">${bm.icon || '💻'}</div>
+        <div class="bookmark-title">${bm.label}</div>
+        <div class="bookmark-desc">${bm.desc || 'Portal Node'}</div>
+        <button class="delete-bm-btn" data-index="${index}" style="
+          position:absolute;top:4px;right:6px;
+          font-size:12px;color:rgba(255,69,58,0.5);
+          cursor:pointer;opacity:0;transition:opacity 0.2s;
+        ">×</button>
+      </a>
+    `).join('');
 
-      // Memory
-      (document.getElementById('mem-used')!).textContent = fmt(memory.used);
-      (document.getElementById('mem-detail')!).textContent =
-        `${fmt(memory.used)} / ${fmt(memory.total)} · ${memory.usedPercent}%`;
-      fillProgress(document.getElementById('mem-bar'), memory.usedPercent);
+    container.innerHTML = `
+      <div class="bookmark-add-btn" id="add-portal-trigger">
+        <span style="font-size:20px;margin-bottom:2px">+</span>
+        <span>Add Portal</span>
+      </div>
+      ${html}
+    `;
 
-      // Uptime
-      (document.getElementById('uptime')!).textContent = uptime.human;
-      (document.getElementById('os-info')!).textContent =
-        `${os.distro} ${os.release} · ${os.hostname}`;
+    // Hook delete portal handlers
+    container.querySelectorAll('.bookmark-card').forEach(card => {
+      card.addEventListener('mouseenter', () => {
+        const btn = card.querySelector('.delete-bm-btn') as HTMLElement;
+        if (btn && parseInt(btn.dataset.index!) >= DEFAULT_BOOKMARKS.length) btn.style.opacity = '1';
+      });
+      card.addEventListener('mouseleave', () => {
+        const btn = card.querySelector('.delete-bm-btn') as HTMLElement;
+        if (btn) btn.style.opacity = '0';
+      });
+    });
 
-      // Disk
-      const diskHtml = disk.map(d => `
-        <div style="margin-bottom:var(--space-4)">
-          <div class="flex items-center justify-between" style="margin-bottom:4px">
-            <span class="text-sm" style="font-weight:500">${d.mount}</span>
-            <span class="text-xs text-muted">${fmt(d.used)} / ${fmt(d.size)} (${d.use}%)</span>
-          </div>
-          <div class="progress-bar">
-            <div class="progress-fill ${d.use >= 90 ? 'danger' : d.use >= 70 ? 'warn' : ''}"
-                 style="width:${d.use}%"></div>
-          </div>
-        </div>
+    container.querySelectorAll('.delete-bm-btn').forEach(btn => {
+      btn.addEventListener('click', (e) => {
+        e.preventDefault();
+        e.stopPropagation();
+        const index = parseInt((e.currentTarget as HTMLButtonElement).dataset.index!);
+        deleteBookmark(index - DEFAULT_BOOKMARKS.length);
+      });
+    });
+
+    // Modal triggers
+    document.getElementById('add-portal-trigger')?.addEventListener('click', () => {
+      document.getElementById('bookmark-modal')?.classList.add('active');
+    });
+  }
+
+  function deleteBookmark(customIndex: number) {
+    try {
+      const stored = localStorage.getItem('teze_bookmarks');
+      if (stored) {
+        const list = JSON.parse(stored);
+        list.splice(customIndex, 1);
+        localStorage.setItem('teze_bookmarks', JSON.stringify(list));
+        loadBookmarks();
+      }
+    } catch {}
+  }
+
+  // Load telemetry metrics
+  async function syncSystemMetrics() {
+    try {
+      const sys = await api.system.info();
+
+      // CPU Loop update
+      (document.getElementById('cpu-reactor-val')!).textContent = `${sys.cpu.loadPercent}%`;
+      (document.getElementById('cpu-cores')!).textContent = `${sys.cpu.cores} Cores // ${sys.cpu.threads} Threads`;
+      setActivityLoop('cpu', sys.cpu.loadPercent);
+
+      // Memory Loop update
+      const usedMem = formatBytes(sys.memory.used);
+      const totalMem = formatBytes(sys.memory.total);
+      (document.getElementById('ram-reactor-val')!).textContent = `${sys.memory.usedPercent}%`;
+      (document.getElementById('ram-detail-val')!).textContent = `${usedMem} / ${totalMem}`;
+      setActivityLoop('ram', sys.memory.usedPercent);
+
+      // Latency updates
+      if (sys.pingLatency !== null) {
+        drawLatencyHistory(sys.pingLatency);
+      }
+
+      // Interfaces list
+      const interfacesHtml = sys.network.map(n => `
+        <tr>
+          <td><span style="font-weight:600;">${n.iface}</span></td>
+          <td style="color:var(--c-text-secondary);font-size:12px">${n.ip4}</td>
+          <td style="color:var(--apple-green);font-weight:600;font-size:12px;text-align:right">${n.speed} Mbps</td>
+        </tr>
       `).join('');
-      document.getElementById('disk-list')!.innerHTML = diskHtml || '<p class="text-muted text-sm">No disk data.</p>';
+      document.getElementById('net-interfaces-tbody')!.innerHTML = interfacesHtml || '<tr><td style="color:var(--c-text-secondary)">No active interface.</td></tr>';
 
     } catch (e) {
-      console.error(e);
+      console.error('System telemetry sync error:', e);
     }
   }
 
-  async function loadContainers() {
+  // Load container list
+  async function syncContainerMatrix() {
     try {
       const { containers } = await api.containers.list();
-
+      
       const running = containers.filter(c => c.state === 'running');
-      (document.getElementById('container-count')!).textContent = `${running.length}/${containers.length}`;
-      (document.getElementById('container-sub')!).textContent =
-        `${running.length} running · ${containers.length - running.length} stopped`;
+      (document.getElementById('docker-matrix-count')!).textContent = `(${running.length} Active / ${containers.length} Total)`;
 
-      if (running.length === 0) {
-        document.getElementById('overview-containers')!.innerHTML =
-          '<p class="text-muted text-sm" style="padding:var(--space-4)">No running containers.</p>';
-        return;
-      }
-
-      const rows = running.slice(0, 6).map(c => `
-        <tr>
-          <td class="td-name">${c.name || c.id}</td>
-          <td class="td-mono">${c.image}</td>
-          <td><span class="badge ${c.state}">${c.state}</span></td>
-          <td class="td-mono">${c.status}</td>
+      const rows = containers.slice(0, 5).map(c => `
+        <tr data-id="${c.id}">
+          <td>
+            <div style="font-weight:600;">${c.name || '—'}</div>
+            <div style="font-size:10px;color:var(--c-text-secondary);margin-top:1px">${c.image}</div>
+          </td>
+          <td>
+            <span class="hud-badge ${c.state}">${c.state}</span>
+          </td>
+          <td>
+            <div class="flex gap-2">
+              ${c.state !== 'running' ? `
+                <button class="btn-deck btn-sm quick-action-btn" data-action="start" data-id="${c.id}">▶ Start</button>
+              ` : `
+                <button class="btn-deck btn-sm btn-danger quick-action-btn" data-action="stop" data-id="${c.id}">■ Stop</button>
+              `}
+            </div>
+          </td>
         </tr>
       `).join('');
 
-      document.getElementById('overview-containers')!.innerHTML = `
-        <div class="table-wrap">
-          <table>
-            <thead><tr>
-              <th>Name</th><th>Image</th><th>State</th><th>Status</th>
-            </tr></thead>
-            <tbody>${rows}</tbody>
-          </table>
-        </div>
-      `;
+      const tbody = document.getElementById('overview-containers-tbody')!;
+      tbody.innerHTML = rows || '<tr><td colspan="3" style="color:var(--c-text-secondary);text-align:center">No containers.</td></tr>';
+
+      tbody.querySelectorAll('.quick-action-btn').forEach(btn => {
+        btn.addEventListener('click', async (e) => {
+          const el = e.currentTarget as HTMLButtonElement;
+          const action = el.dataset.action as 'start' | 'stop';
+          const id = el.dataset.id!;
+          
+          el.disabled = true;
+          el.textContent = '…';
+
+          try {
+            await api.containers[action](id);
+            await syncContainerMatrix();
+          } catch (err: any) {
+            alert(`Execution failure: ${err.message}`);
+            el.disabled = false;
+            el.textContent = action === 'start' ? '▶ Start' : '■ Stop';
+          }
+        });
+      });
+
     } catch (e) {
-      console.error(e);
+      document.getElementById('overview-containers-tbody')!.innerHTML = '<tr><td colspan="3" style="color:var(--apple-red);text-align:center;padding:20px">Docker Connection Interrupted.</td></tr>';
     }
   }
 
-  loadSystem();
-  loadContainers();
+  // Diagnostics Execution Listener
+  document.querySelectorAll('.diag-trigger').forEach(btn => {
+    btn.addEventListener('click', async (e) => {
+      const el = e.currentTarget as HTMLButtonElement;
+      const cmd = el.dataset.cmd!;
+      
+      const out = document.getElementById('diag-output')!;
+      out.style.color = 'var(--apple-orange)';
+      out.textContent = `Running diagnostic [${cmd.toUpperCase()}] on target host...`;
+
+      try {
+        const res = await api.system.diagnostics(cmd);
+        out.style.color = '#fff';
+        out.textContent = res.output;
+      } catch (err: any) {
+        out.style.color = 'var(--apple-red)';
+        out.textContent = `Error executing node [${cmd.toUpperCase()}]: ${err.message}`;
+      }
+    });
+  });
+
+  // Modal setup
+  const modal = document.getElementById('bookmark-modal');
+  const closeModal = () => modal?.classList.remove('active');
+  document.getElementById('close-modal-btn')?.addEventListener('click', closeModal);
+  
+  document.getElementById('bookmark-form')?.addEventListener('submit', (e) => {
+    e.preventDefault();
+    const label = (document.getElementById('bm-label') as HTMLInputElement).value;
+    const url = (document.getElementById('bm-url') as HTMLInputElement).value;
+    const icon = (document.getElementById('bm-icon') as HTMLSelectElement).value;
+
+    const newBm = { label, url, icon, desc: 'Shortcut Portal' };
+    
+    try {
+      const stored = localStorage.getItem('teze_bookmarks');
+      const list = stored ? JSON.parse(stored) : [];
+      list.push(newBm);
+      localStorage.setItem('teze_bookmarks', JSON.stringify(list));
+      loadBookmarks();
+      closeModal();
+      (document.getElementById('bookmark-form') as HTMLFormElement).reset();
+    } catch {}
+  });
+
+  // Initial Sync & Background polling
+  loadBookmarks();
+  syncSystemMetrics();
+  syncContainerMatrix();
+
+  setInterval(syncSystemMetrics, 5000);
+  setInterval(syncContainerMatrix, 6000);
 </script>

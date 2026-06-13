@@ -1,40 +1,65 @@
 ---
-// src/pages/containers.astro – Full containers management view
+// src/pages/containers.astro – Apple UI Container Console
 import DashboardLayout from '../layouts/DashboardLayout.astro';
 ---
 
 <DashboardLayout title="Containers" activePage="containers">
 
-  <div class="flex items-center justify-between mb-6">
-    <div>
-      <div class="section-title" style="margin-bottom:2px">Docker Containers</div>
-      <p class="text-sm text-muted">Manage all containers on this host.</p>
-    </div>
-    <div class="flex gap-3">
-      <select id="filter-state" class="btn btn-ghost btn-sm" style="appearance:auto">
-        <option value="all">All states</option>
-        <option value="running">Running</option>
-        <option value="exited">Exited</option>
-        <option value="paused">Paused</option>
-      </select>
+  <div class="panel" style="margin-bottom:20px;padding:16px 24px">
+    <div class="flex items-center justify-between" style="flex-wrap:wrap;gap:16px">
+      <div>
+        <div class="panel-title" style="font-size:18px">Docker Containers</div>
+        <div class="panel-subtitle">Manage lifecycles and runtime modules.</div>
+      </div>
+      <div class="flex gap-3 items-center" style="flex-wrap:wrap">
+        <select id="filter-state" class="btn-deck btn-ghost" style="appearance:auto;padding-right:24px;border-radius:var(--radius-sm)">
+          <option value="all">All States</option>
+          <option value="running">Running</option>
+          <option value="exited">Exited</option>
+          <option value="paused">Paused</option>
+        </select>
+        
+        <button id="prune-btn" class="btn-lock">
+          🔒 Prune Containers
+        </button>
+      </div>
     </div>
   </div>
 
-  <div class="card">
-    <div id="containers-table">
-      <div class="loading-state"><span class="spinner"></span> Fetching containers…</div>
+  <div class="panel">
+    <div class="panel-header" style="margin-bottom:16px">
+      <div class="panel-title" style="font-size:14px;color:var(--apple-gray)">
+        Registry Table · <span id="registry-count">0 Loaded</span>
+      </div>
+    </div>
+    
+    <div id="containers-table-viewport">
+      <div class="loading-state"><span class="spinner"></span> Reading docker metrics…</div>
     </div>
   </div>
 
-  <!-- Action toast -->
+  <!-- Dynamic Island Style Toast -->
   <div id="toast" style="
-    position:fixed;bottom:24px;right:24px;
-    background:#111827;color:#fff;
-    padding:10px 18px;border-radius:10px;
-    font-size:0.875rem;font-weight:500;
-    box-shadow:0 8px 24px rgb(0 0 0/.25);
-    opacity:0;transition:opacity .2s;
-    pointer-events:none;z-index:100;
+    position:fixed;
+    top:-60px;
+    left:50%;
+    transform:translateX(-50%);
+    background:rgba(28,28,30,0.95);
+    backdrop-filter:blur(20px);
+    border:1px solid rgba(255,255,255,0.1);
+    color:#fff;
+    padding:10px 20px;
+    border-radius:9999px;
+    font-size:13px;
+    font-weight:600;
+    box-shadow:0 8px 32px rgba(0,0,0,0.5);
+    z-index:2000;
+    transition:top 0.4s cubic-bezier(0.16, 1, 0.3, 1), opacity 0.3s;
+    opacity:0;
+    pointer-events:none;
+    display:flex;
+    align-items:center;
+    gap:8px;
   "></div>
 
 </DashboardLayout>
@@ -46,17 +71,27 @@ import DashboardLayout from '../layouts/DashboardLayout.astro';
 
   function showToast(msg: string) {
     const t = document.getElementById('toast')!;
-    t.textContent = msg;
+    t.innerHTML = `<span style="color:var(--apple-blue)">●</span> ${msg}`;
+    t.style.top = '24px';
     t.style.opacity = '1';
-    setTimeout(() => { t.style.opacity = '0'; }, 2800);
+    setTimeout(() => {
+      t.style.top = '-60px';
+      t.style.opacity = '0';
+    }, 3200);
   }
 
-  function ports(container: Container): string {
-    if (!container.ports.length) return '—';
+  function renderPorts(container: Container): string {
+    if (!container.ports.length) return '<span style="color:var(--c-text-muted)">—</span>';
     return container.ports
       .filter(p => p.PublicPort)
-      .map(p => `${p.PublicPort}:${p.PrivatePort}`)
-      .join(', ') || '—';
+      .map(p => `
+        <span style="
+          font-family:var(--font-mono);font-size:11px;
+          background:rgba(10,132,255,0.08);color:var(--apple-blue);
+          padding:2px 6px;border-radius:4px;font-weight:500;
+        ">${p.PublicPort}:${p.PrivatePort}</span>
+      `)
+      .join(' ') || '<span style="color:var(--c-text-muted)">—</span>';
   }
 
   function renderTable(containers: Container[]) {
@@ -64,60 +99,84 @@ import DashboardLayout from '../layouts/DashboardLayout.astro';
     if (!tbody) return;
 
     if (containers.length === 0) {
-      tbody.innerHTML = `<tr><td colspan="6" style="text-align:center;color:var(--c-text-muted);padding:var(--space-8)">No containers found.</td></tr>`;
+      tbody.innerHTML = `<tr><td colspan="5" style="text-align:center;color:var(--c-text-secondary);padding:32px">No containers match the selection.</td></tr>`;
       return;
     }
 
     tbody.innerHTML = containers.map(c => `
       <tr data-id="${c.id}">
         <td>
-          <div class="td-name">${c.name || '—'}</div>
-          <div class="td-mono" style="margin-top:2px">${c.id}</div>
+          <div style="font-weight:600;color:#fff">${c.name || '—'}</div>
+          <div style="font-size:11px;color:var(--c-text-secondary);margin-top:2px">${c.image}</div>
         </td>
-        <td class="td-mono">${c.image}</td>
-        <td><span class="badge ${c.state}">${c.state}</span></td>
-        <td class="text-muted text-xs">${c.status}</td>
-        <td class="td-mono">${ports(c)}</td>
+        <td><span class="hud-badge ${c.state}">${c.state}</span></td>
+        <td style="font-size:12px;color:var(--c-text-secondary)">${c.status}</td>
+        <td>${renderPorts(c)}</td>
         <td>
-          <div class="flex gap-2">
+          <div class="flex gap-2" style="justify-content:flex-end">
             ${c.state !== 'running' ? `
-              <button class="btn btn-sm btn-ghost action-btn"
-                      data-action="start" data-id="${c.id}"
-                      title="Start">
-                ▶ Start
+              <button class="btn-deck btn-sm btn-success action-btn" data-action="start" data-id="${c.id}">
+                Start
               </button>` : ''}
+            
             ${c.state === 'running' ? `
-              <button class="btn btn-sm btn-danger-ghost action-btn"
-                      data-action="stop" data-id="${c.id}"
-                      title="Stop">
-                ■ Stop
+              <button class="btn-deck btn-sm btn-danger action-btn confirmation-needed" data-action="stop" data-id="${c.id}">
+                Stop
               </button>` : ''}
-            <button class="btn btn-sm btn-ghost action-btn"
-                    data-action="restart" data-id="${c.id}"
-                    title="Restart">
-              ↺ Restart
+
+            <button class="btn-deck btn-sm btn-ghost action-btn" data-action="restart" data-id="${c.id}">
+              Restart
+            </button>
+
+            <button class="btn-deck btn-sm btn-ghost action-btn confirmation-needed" data-action="remove" data-id="${c.id}" style="color:var(--apple-red);border-color:rgba(255,69,58,0.2)">
+              Delete
             </button>
           </div>
         </td>
       </tr>
     `).join('');
 
-    // Attach action handlers
+    // Attach actions
     tbody.querySelectorAll('.action-btn').forEach(btn => {
       btn.addEventListener('click', async (e) => {
         const el = e.currentTarget as HTMLButtonElement;
-        const action = el.dataset.action as 'start' | 'stop' | 'restart';
+        const action = el.dataset.action as 'start' | 'stop' | 'restart' | 'remove';
         const id = el.dataset.id!;
+
+        // Apple double tap lock confirm
+        if (el.classList.contains('confirmation-needed') && !el.classList.contains('unlocked')) {
+          el.classList.add('unlocked');
+          const originalText = el.textContent || '';
+          el.dataset.origText = originalText.trim();
+          
+          if (action === 'stop') {
+            el.textContent = 'Confirm Stop';
+          } else if (action === 'remove') {
+            el.textContent = 'Confirm Delete';
+          }
+
+          setTimeout(() => {
+            if (el.classList.contains('unlocked')) {
+              el.classList.remove('unlocked');
+              el.textContent = el.dataset.origText || originalText;
+            }
+          }, 4000);
+          return;
+        }
+
         el.disabled = true;
+        const origText = el.textContent;
         el.textContent = '…';
 
         try {
           await api.containers[action](id);
-          showToast(`✓ Container ${action}ed`);
+          showToast(`${action.toUpperCase()} Action Completed`);
           await load();
         } catch (err: any) {
-          showToast(`✗ ${err.message}`);
+          showToast(`Error: ${err.message}`);
           el.disabled = false;
+          el.classList.remove('unlocked');
+          el.textContent = el.dataset.origText || origText;
         }
       });
     });
@@ -128,6 +187,8 @@ import DashboardLayout from '../layouts/DashboardLayout.astro';
     const filtered = state === 'all'
       ? allContainers
       : allContainers.filter(c => c.state === state);
+    
+    (document.getElementById('registry-count')!).textContent = `${filtered.length} / ${allContainers.length} Active`;
     renderTable(filtered);
   }
 
@@ -135,23 +196,23 @@ import DashboardLayout from '../layouts/DashboardLayout.astro';
     try {
       const { containers } = await api.containers.list();
       allContainers = containers.sort((a, b) => {
-        // Running first
         if (a.state === 'running' && b.state !== 'running') return -1;
         if (a.state !== 'running' && b.state === 'running') return 1;
         return a.name.localeCompare(b.name);
       });
 
-      document.getElementById('containers-table')!.innerHTML = `
-        <div class="table-wrap">
-          <table>
-            <thead><tr>
-              <th>Name / ID</th>
-              <th>Image</th>
-              <th>State</th>
-              <th>Status</th>
-              <th>Ports</th>
-              <th>Actions</th>
-            </tr></thead>
+      document.getElementById('containers-table-viewport')!.innerHTML = `
+        <div class="table-viewport">
+          <table class="readout-table">
+            <thead>
+              <tr>
+                <th>Container Name</th>
+                <th>State</th>
+                <th>Runtime Status</th>
+                <th>Ports</th>
+                <th style="text-align:right">Controls</th>
+              </tr>
+            </thead>
             <tbody id="containers-tbody"></tbody>
           </table>
         </div>
@@ -159,11 +220,59 @@ import DashboardLayout from '../layouts/DashboardLayout.astro';
 
       applyFilter();
     } catch (err: any) {
-      document.getElementById('containers-table')!.innerHTML =
-        `<div class="error-state">⚠ Failed to load containers: ${err.message}</div>`;
+      document.getElementById('containers-table-viewport')!.innerHTML =
+        `<div class="error-state">Could not connect to backend server: ${err.message}</div>`;
     }
+  }
+
+  // Docker prune button
+  const pruneBtn = document.getElementById('prune-btn') as HTMLButtonElement | null;
+  if (pruneBtn) {
+    pruneBtn.addEventListener('click', async () => {
+      if (!pruneBtn.classList.contains('unlocked')) {
+        pruneBtn.classList.add('unlocked');
+        pruneBtn.textContent = '⚠️ Confirm Prune';
+        setTimeout(() => {
+          if (pruneBtn.classList.contains('unlocked')) {
+            pruneBtn.classList.remove('unlocked');
+            pruneBtn.textContent = '🔒 Prune Containers';
+          }
+        }, 4000);
+        return;
+      }
+
+      pruneBtn.disabled = true;
+      pruneBtn.textContent = 'Pruning…';
+      try {
+        const res = await api.containers.prune();
+        const count = res.pruned.ContainersDeleted?.length || 0;
+        const space = res.pruned.SpaceReclaimed || 0;
+        const mb = (space / 1024 / 1024).toFixed(1);
+        showToast(`Reclaimed ${mb} MB (Deleted ${count} stopped containers)`);
+        await load();
+      } catch (err: any) {
+        showToast(`Prune Failed: ${err.message}`);
+      } finally {
+        pruneBtn.disabled = false;
+        pruneBtn.classList.remove('unlocked');
+        pruneBtn.textContent = '🔒 Prune Containers';
+      }
+    });
   }
 
   document.getElementById('filter-state')?.addEventListener('change', applyFilter);
   load();
+
+  // Poll status changes
+  setInterval(async () => {
+    try {
+      const { containers } = await api.containers.list();
+      allContainers = containers.sort((a, b) => {
+        if (a.state === 'running' && b.state !== 'running') return -1;
+        if (a.state !== 'running' && b.state === 'running') return 1;
+        return a.name.localeCompare(b.name);
+      });
+      applyFilter();
+    } catch {}
+  }, 8000);
 </script>

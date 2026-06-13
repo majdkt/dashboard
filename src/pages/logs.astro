@@ -1,60 +1,181 @@
 ---
+// src/pages/logs.astro – Apple UI Container Logs
 import DashboardLayout from '../layouts/DashboardLayout.astro';
 ---
+
 <DashboardLayout title="Logs" activePage="logs">
-  <div class="section-title mb-4">Container Logs</div>
 
-  <div class="flex gap-4 mb-6">
-    <select id="source-select" class="btn btn-ghost" style="appearance:auto;min-width:200px">
-      <option value="">Select a container…</option>
-    </select>
-    <select id="tail-select" class="btn btn-ghost btn-sm" style="appearance:auto">
-      <option value="50">Last 50 lines</option>
-      <option value="100" selected>Last 100 lines</option>
-      <option value="200">Last 200 lines</option>
-      <option value="500">Last 500 lines</option>
-    </select>
-    <button id="fetch-btn" class="btn btn-primary btn-sm">Fetch Logs</button>
-  </div>
+  <div class="panel" style="margin-bottom:20px;padding:20px 24px">
+    <div class="panel-subtitle" style="text-transform:uppercase;font-size:11px;font-weight:600;letter-spacing:0.5px;color:var(--apple-blue)">DOCKER // STREAM_COLLECTOR</div>
+    <div class="panel-title" style="font-size:18px;margin-top:2px;margin-bottom:16px">Container Logs</div>
+    
+    <div class="flex gap-4" style="flex-wrap:wrap;align-items:flex-end">
+      <div class="form-group" style="flex:1;min-width:240px;margin-bottom:0">
+        <label class="form-label" style="font-size:10px">Select Container</label>
+        <select id="source-select" class="form-input" style="appearance:auto;border-radius:var(--radius-sm)">
+          <option value="">Choose a container…</option>
+        </select>
+      </div>
 
-  <div class="card">
-    <div id="log-output" class="log-block" style="min-height:300px">
-      <span style="color:#475569">Select a container above and click Fetch Logs.</span>
+      <div class="form-group" style="width:140px;margin-bottom:0">
+        <label class="form-label" style="font-size:10px">Lines Limit</label>
+        <select id="tail-select" class="form-input" style="appearance:auto;border-radius:var(--radius-sm)">
+          <option value="50">50 Lines</option>
+          <option value="100" selected>100 Lines</option>
+          <option value="200">200 Lines</option>
+          <option value="500">500 Lines</option>
+        </select>
+      </div>
+
+      <div class="form-group" style="flex:1;min-width:200px;margin-bottom:0">
+        <label class="form-label" style="font-size:10px">Filter Text</label>
+        <input type="text" id="log-filter" class="form-input" placeholder="Search log text..." style="border-radius:9999px;padding-left:16px" />
+      </div>
+
+      <div class="flex gap-2 items-center" style="height:40px">
+        <button id="fetch-btn" class="btn-deck btn-sm">Refresh</button>
+        <label class="flex items-center gap-2" style="font-size:12px;color:var(--c-text-secondary);cursor:pointer;user-select:none">
+          <input type="checkbox" id="auto-refresh" style="accent-color:var(--apple-blue)" />
+          Auto Live
+        </label>
+      </div>
     </div>
   </div>
+
+  <div class="panel" style="padding:16px var(--space-6)">
+    <div class="panel-header" style="margin-bottom:12px">
+      <div class="panel-title" style="font-size:13px;color:var(--apple-gray)">
+        Logs Console Output · <span id="log-stats" style="font-weight:600;color:var(--apple-blue)">Standby</span>
+      </div>
+      <div class="flex gap-2">
+        <button id="clear-log-btn" class="btn-deck btn-ghost" style="padding:4px 10px;font-size:11px;border-radius:var(--radius-sm)">Clear</button>
+        <button id="scroll-bottom-btn" class="btn-deck btn-ghost" style="padding:4px 10px;font-size:11px;border-radius:var(--radius-sm)">Scroll End</button>
+      </div>
+    </div>
+
+    <div class="terminal-block" id="log-output" style="min-height:450px;max-height:600px;border-color:rgba(255,255,255,0.05)">Select a container to fetch logs.</div>
+  </div>
+
 </DashboardLayout>
 
 <script>
   import { api } from '../lib/api.ts';
 
+  let pollingInterval: any = null;
+  let rawLogLines: string[] = [];
+
   async function loadSources() {
     try {
       const { sources } = await api.logs.sources();
       const sel = document.getElementById('source-select') as HTMLSelectElement;
+      if (!sel) return;
+
       sources.forEach(s => {
         const opt = document.createElement('option');
         opt.value = s.id;
         opt.textContent = `${s.name} (${s.state})`;
         sel.appendChild(opt);
       });
-    } catch {}
+    } catch (e) {
+      console.error('Failed to list log channels:', e);
+    }
   }
 
-  document.getElementById('fetch-btn')?.addEventListener('click', async () => {
+  function formatLogLine(line: string): string {
+    let formatted = line;
+    const lower = line.toLowerCase();
+
+    // Standard soft colors for levels
+    if (lower.includes('err') || lower.includes('fail') || lower.includes('exception')) {
+      formatted = `<span style="color:var(--apple-red);font-weight:600">${line}</span>`;
+    } else if (lower.includes('warn') || lower.includes('warning')) {
+      formatted = `<span style="color:var(--apple-orange)">${line}</span>`;
+    } else if (lower.includes('info') || lower.includes('success')) {
+      formatted = `<span style="color:var(--apple-green)">${line}</span>`;
+    } else if (line.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
+      formatted = line.replace(/^([^\s]+)/, '<span style="color:var(--apple-gray)">$1</span>');
+    }
+
+    return formatted;
+  }
+
+  function displayLogs() {
+    const out = document.getElementById('log-output')!;
+    const filterVal = (document.getElementById('log-filter') as HTMLInputElement).value.toLowerCase().trim();
+    const statsEl = document.getElementById('log-stats')!;
+
+    let filtered = rawLogLines;
+    if (filterVal) {
+      filtered = rawLogLines.filter(line => line.toLowerCase().includes(filterVal));
+    }
+
+    statsEl.textContent = `${filtered.length} Lines`;
+
+    if (filtered.length === 0) {
+      out.innerHTML = `<span style="color:var(--c-text-secondary)">No lines matching query.</span>`;
+      return;
+    }
+
+    out.innerHTML = filtered.map(formatLogLine).join('\n');
+  }
+
+  async function fetchLogs() {
     const id = (document.getElementById('source-select') as HTMLSelectElement).value;
     const tail = parseInt((document.getElementById('tail-select') as HTMLSelectElement).value);
     const out = document.getElementById('log-output')!;
 
-    if (!id) { out.textContent = 'Please select a container.'; return; }
+    if (!id) {
+      out.innerHTML = `<span style="color:var(--c-text-secondary)">Please select a container above to review log output.</span>`;
+      return;
+    }
 
-    out.innerHTML = '<span style="color:#94a3b8">Fetching…</span>';
     try {
       const { lines } = await api.logs.tail(id, tail);
-      out.textContent = lines.join('\n') || '(no output)';
+      rawLogLines = lines;
+      displayLogs();
       out.scrollTop = out.scrollHeight;
     } catch (e: any) {
-      out.innerHTML = `<span style="color:#f87171">Error: ${e.message}</span>`;
+      out.innerHTML = `<span style="color:var(--apple-red)">Failed to load container logs: ${e.message}</span>`;
     }
+  }
+
+  function setupPolling() {
+    const autoRef = (document.getElementById('auto-refresh') as HTMLInputElement).checked;
+    clearInterval(pollingInterval);
+    
+    if (autoRef) {
+      pollingInterval = setInterval(fetchLogs, 4000);
+    }
+  }
+
+  document.getElementById('fetch-btn')?.addEventListener('click', () => {
+    fetchLogs();
+  });
+
+  document.getElementById('source-select')?.addEventListener('change', () => {
+    fetchLogs();
+  });
+
+  document.getElementById('tail-select')?.addEventListener('change', () => {
+    fetchLogs();
+  });
+
+  document.getElementById('log-filter')?.addEventListener('input', () => {
+    displayLogs();
+  });
+
+  document.getElementById('auto-refresh')?.addEventListener('change', () => {
+    setupPolling();
+  });
+
+  document.getElementById('clear-log-btn')?.addEventListener('click', () => {
+    rawLogLines = [];
+    displayLogs();
+  });
+
+  document.getElementById('scroll-bottom-btn')?.addEventListener('click', () => {
+    const out = document.getElementById('log-output')!;
+    out.scrollTop = out.scrollHeight;
   });
 
   loadSources();
