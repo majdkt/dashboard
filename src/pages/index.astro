@@ -1,6 +1,12 @@
 ---
 // src/pages/index.astro – Apple UI inspired Overview Dashboard
 import DashboardLayout from '../layouts/DashboardLayout.astro';
+
+// Portal URLs – read from env at build time so no private IPs are hardcoded
+const portainerUrl        = import.meta.env.PUBLIC_PORTAINER_URL        || '';
+const plexUrl             = import.meta.env.PUBLIC_PLEX_URL             || '';
+const piholeUrl           = import.meta.env.PUBLIC_PIHOLE_URL           || '';
+const homeAssistantUrl    = import.meta.env.PUBLIC_HOMEASSISTANT_URL    || '';
 ---
 
 <DashboardLayout title="Overview" activePage="overview">
@@ -63,7 +69,7 @@ import DashboardLayout from '../layouts/DashboardLayout.astro';
           <!-- Populated by script -->
         </div>
         <div class="flex justify-between" style="font-size:11px;margin-top:4px;color:var(--c-text-secondary)">
-          <span>Ping (1.1.1.1)</span>
+          <span>Ping (<span id="ping-host-label">…</span>)</span>
           <span id="latency-value" style="color:var(--apple-blue);font-weight:600">Testing...</span>
         </div>
       </div>
@@ -210,13 +216,14 @@ import DashboardLayout from '../layouts/DashboardLayout.astro';
 <script>
   import { api } from '../lib/api.ts';
 
-  // Seed default bookmarks
+  // Seed default bookmarks – URLs are injected at build time from .env
+  // so no private IPs are ever hardcoded in the JS bundle.
   const DEFAULT_BOOKMARKS = [
-    { label: 'Portainer', url: 'http://localhost:9000', icon: '⚡', desc: 'Docker Panel' },
-    { label: 'Plex', url: 'http://localhost:32400', icon: '🎬', desc: 'Media Registry' },
-    { label: 'Pi-hole', url: 'http://localhost:80/admin', icon: '📡', desc: 'Adblocker' },
-    { label: 'Home Hub', url: 'http://localhost:8123', icon: '🏠', desc: 'Home Panel' }
-  ];
+    { label: 'Portainer',     url: `${import.meta.env.PUBLIC_PORTAINER_URL     || ''}`, icon: '⚡', desc: 'Docker Panel' },
+    { label: 'Plex',         url: `${import.meta.env.PUBLIC_PLEX_URL           || ''}`, icon: '🎬', desc: 'Media Registry' },
+    { label: 'Pi-hole',      url: `${import.meta.env.PUBLIC_PIHOLE_URL         || ''}`, icon: '📡', desc: 'Adblocker' },
+    { label: 'Home Hub',     url: `${import.meta.env.PUBLIC_HOMEASSISTANT_URL  || ''}`, icon: '🏠', desc: 'Home Panel' },
+  ].filter(bm => bm.url); // omit any portal whose env var was left empty
 
   // Helper to format bytes
   function formatBytes(bytes: number) {
@@ -348,7 +355,9 @@ import DashboardLayout from '../layouts/DashboardLayout.astro';
       (document.getElementById('ram-detail-val')!).textContent = `${usedMem} / ${totalMem}`;
       setActivityLoop('ram', sys.memory.usedPercent);
 
-      // Latency updates
+      // Latency updates – use pingHost from API so the label reflects PING_HOST env var
+      const pingHostEl = document.getElementById('ping-host-label');
+      if (pingHostEl && (sys as any).pingHost) pingHostEl.textContent = (sys as any).pingHost;
       if (sys.pingLatency !== null) {
         drawLatencyHistory(sys.pingLatency);
       }

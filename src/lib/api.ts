@@ -2,10 +2,19 @@
 // ─────────────────────────────────────────────────────────────────────────────
 // Thin client wrapper around the Teze backend API.
 // All fetch calls go through here – the UI never touches Docker directly.
+//
+// Configuration: set PUBLIC_API_URL in dashboard/.env
+// Example:  PUBLIC_API_URL=http://192.168.1.100:3001
 // ─────────────────────────────────────────────────────────────────────────────
 
-export const API_BASE =
-  import.meta.env.PUBLIC_API_URL ?? 'http://localhost:3001';
+if (!import.meta.env.PUBLIC_API_URL) {
+  throw new Error(
+    '[Teze] PUBLIC_API_URL is not set. ' +
+    'Copy dashboard/.env.example to dashboard/.env and fill in your API URL.'
+  );
+}
+
+export const API_BASE = import.meta.env.PUBLIC_API_URL as string;
 
 async function apiFetch<T>(
   path: string,
