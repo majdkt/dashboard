@@ -1,12 +1,6 @@
 ---
 // src/pages/index.astro – Apple UI inspired Overview Dashboard
 import DashboardLayout from '../layouts/DashboardLayout.astro';
-
-// Portal URLs – read from env at build time so no private IPs are hardcoded
-const portainerUrl        = import.meta.env.PUBLIC_PORTAINER_URL        || '';
-const plexUrl             = import.meta.env.PUBLIC_PLEX_URL             || '';
-const piholeUrl           = import.meta.env.PUBLIC_PIHOLE_URL           || '';
-const homeAssistantUrl    = import.meta.env.PUBLIC_HOMEASSISTANT_URL    || '';
 ---
 
 <DashboardLayout title="Overview" activePage="overview">
@@ -216,14 +210,9 @@ const homeAssistantUrl    = import.meta.env.PUBLIC_HOMEASSISTANT_URL    || '';
 <script>
   import { api } from '../lib/api.ts';
 
-  // Seed default bookmarks – URLs are injected at build time from .env
-  // so no private IPs are ever hardcoded in the JS bundle.
-  const DEFAULT_BOOKMARKS = [
-    { label: 'Portainer',     url: `${import.meta.env.PUBLIC_PORTAINER_URL     || ''}`, icon: '⚡', desc: 'Docker Panel' },
-    { label: 'Plex',         url: `${import.meta.env.PUBLIC_PLEX_URL           || ''}`, icon: '🎬', desc: 'Media Registry' },
-    { label: 'Pi-hole',      url: `${import.meta.env.PUBLIC_PIHOLE_URL         || ''}`, icon: '📡', desc: 'Adblocker' },
-    { label: 'Home Hub',     url: `${import.meta.env.PUBLIC_HOMEASSISTANT_URL  || ''}`, icon: '🏠', desc: 'Home Panel' },
-  ].filter(bm => bm.url); // omit any portal whose env var was left empty
+  // Quick Links are entirely user-managed via localStorage.
+  // Users add their own portals with the + button — no defaults seeded.
+  const DEFAULT_BOOKMARKS: { label: string; url: string; icon: string; desc: string }[] = [];
 
   // Helper to format bytes
   function formatBytes(bytes: number) {
