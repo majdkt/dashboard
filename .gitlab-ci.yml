@@ -1,0 +1,25 @@
+stages:
+  - test
+  - deploy
+
+test:
+  stage: test
+  image: node:22.12-bookworm-slim
+  tags:
+    - vaio
+  script:
+    - echo "Testing server-dashboard pipeline"
+    - node -v
+    - npm -v
+
+deploy:
+  stage: deploy
+  image: docker:27-cli
+  tags:
+    - vaio
+  script:
+    - cd /opt/docker/server-dashboard
+    - docker-compose --env-file .env build api dashboard
+    - docker-compose --env-file .env up -d --no-build --force-recreate
+  only:
+    - main
