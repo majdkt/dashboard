@@ -261,7 +261,7 @@ import DashboardLayout from '../layouts/DashboardLayout.astro';
 
     let bookmarks = [...DEFAULT_BOOKMARKS];
     try {
-      const stored = localStorage.getItem('teze_bookmarks');
+      const stored = localStorage.getItem('server_dashboard_bookmarks');
       if (stored) {
         bookmarks = [...bookmarks, ...JSON.parse(stored)];
       }
@@ -317,11 +317,11 @@ import DashboardLayout from '../layouts/DashboardLayout.astro';
 
   function deleteBookmark(customIndex: number) {
     try {
-      const stored = localStorage.getItem('teze_bookmarks');
+      const stored = localStorage.getItem('server_dashboard_bookmarks');
       if (stored) {
         const list = JSON.parse(stored);
         list.splice(customIndex, 1);
-        localStorage.setItem('teze_bookmarks', JSON.stringify(list));
+        localStorage.setItem('server_dashboard_bookmarks', JSON.stringify(list));
         loadBookmarks();
       }
     } catch {}
@@ -458,10 +458,10 @@ import DashboardLayout from '../layouts/DashboardLayout.astro';
     const newBm = { label, url, icon, desc: 'Shortcut Portal' };
     
     try {
-      const stored = localStorage.getItem('teze_bookmarks');
+      const stored = localStorage.getItem('server_dashboard_bookmarks');
       const list = stored ? JSON.parse(stored) : [];
       list.push(newBm);
-      localStorage.setItem('teze_bookmarks', JSON.stringify(list));
+      localStorage.setItem('server_dashboard_bookmarks', JSON.stringify(list));
       loadBookmarks();
       closeModal();
       (document.getElementById('bookmark-form') as HTMLFormElement).reset();

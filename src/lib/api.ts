@@ -1,6 +1,6 @@
 // src/lib/api.ts
 // ─────────────────────────────────────────────────────────────────────────────
-// Thin client wrapper around the Teze backend API.
+// Thin client wrapper around the Server Dashboard backend API.
 // All fetch calls go through here – the UI never touches Docker directly.
 //
 // Configuration: set PUBLIC_API_URL in dashboard/.env
@@ -9,7 +9,7 @@
 
 if (!import.meta.env.PUBLIC_API_URL) {
   throw new Error(
-    '[Teze] PUBLIC_API_URL is not set. ' +
+    '[Server Dashboard] PUBLIC_API_URL is not set. ' +
     'Copy dashboard/.env.example to dashboard/.env and fill in your API URL.'
   );
 }
