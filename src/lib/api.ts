@@ -88,6 +88,40 @@ export interface DiagnosticResult {
   output: string;
 }
 
+export interface NotesHealth {
+  status: string;
+  ts?: number;
+}
+
+export interface NotesSyncState {
+  app: string;
+  status: string;
+  database: { status: string };
+  notes: { total: number };
+  sync: { status: string };
+}
+
+export interface NotesLogEntry {
+  ts?: string;
+  level?: string;
+  msg?: string;
+  [key: string]: unknown;
+}
+
+export interface NotesStatus {
+  reachable: boolean;
+  url: string;
+  health: NotesHealth | null;
+  syncState: NotesSyncState | null;
+}
+
+export interface NotesLogsResponse {
+  /** Structured entries (if the notes app returns JSON log objects) */
+  logs?: NotesLogEntry[];
+  /** Raw line array (fallback if the notes app returns plain lines) */
+  lines?: string[];
+}
+
 // ── API Methods ───────────────────────────────────────────────────────────────
 
 export const api = {
@@ -117,5 +151,12 @@ export const api = {
     tail: (id: string, tail = 100) =>
       apiFetch<{ id: string; lines: string[] }>(`/api/logs/${id}?tail=${tail}`),
   },
+  notes: {
+    /** Combined health + sync/state from the notes app */
+    status: () => apiFetch<NotesStatus>('/api/notes/status'),
+    /** Proxied logs from the notes app */
+    logs: (limit = 100) => apiFetch<NotesLogsResponse>(`/api/notes/logs?limit=${limit}`),
+  },
 };
+
 

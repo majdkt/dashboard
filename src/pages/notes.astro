@@ -1,0 +1,405 @@
+---
+// src/pages/notes.astro – Notes App Control Panel
+import DashboardLayout from '../layouts/DashboardLayout.astro';
+---
+
+<DashboardLayout title="Notes" activePage="notes">
+
+  <!-- ── Status Row ───────────────────────────────────────────────────────── -->
+  <div class="bento-grid" style="margin-bottom:0">
+
+    <!-- Status Card -->
+    <div class="panel col-4">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 4a2 2 0 012-2h4.586A2 2 0 0112 2.586L15.414 6A2 2 0 0116 7.414V16a2 2 0 01-2 2H6a2 2 0 01-2-2V4zm2 6a1 1 0 011-1h6a1 1 0 110 2H7a1 1 0 01-1-1zm1 3a1 1 0 100 2h6a1 1 0 100-2H7z" clip-rule="evenodd"/></svg>
+          Notes App
+        </div>
+        <span id="notes-badge" class="hud-badge error">Connecting…</span>
+      </div>
+
+      <div style="margin-top:20px;display:flex;flex-direction:column;gap:12px">
+        <div class="readout-row">
+          <span class="readout-label">App Status</span>
+          <span id="notes-status-val" class="readout-value" style="color:var(--apple-gray)">—</span>
+        </div>
+        <div class="readout-row">
+          <span class="readout-label">Database</span>
+          <span id="notes-db-val" class="readout-value" style="color:var(--apple-gray)">—</span>
+        </div>
+        <div class="readout-row">
+          <span class="readout-label">Total Notes</span>
+          <span id="notes-count-val" class="readout-value" style="color:var(--apple-blue);font-weight:700">—</span>
+        </div>
+        <div class="readout-row">
+          <span class="readout-label">Sync Mode</span>
+          <span id="notes-sync-val" class="readout-value" style="color:var(--apple-gray)">—</span>
+        </div>
+        <div class="readout-row">
+          <span class="readout-label">API URL</span>
+          <span id="notes-url-val" class="readout-value" style="color:var(--apple-gray);font-size:11px;word-break:break-all">—</span>
+        </div>
+      </div>
+    </div>
+
+    <!-- Container Control -->
+    <div class="panel col-4">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path d="M2 3a1 1 0 011-1h14a1 1 0 011 1v14a1 1 0 01-1 1H3a1 1 0 01-1-1V3Z"/></svg>
+          Container Control
+        </div>
+      </div>
+
+      <div style="margin-top:16px;display:flex;flex-direction:column;gap:10px">
+        <!-- notes-api container -->
+        <div class="notes-container-row" id="row-notes-api">
+          <div>
+            <div style="font-weight:600;font-size:13px">notes-api</div>
+            <div style="font-size:11px;color:var(--c-text-secondary)">API backend · port 3010</div>
+          </div>
+          <div class="flex gap-2 items-center">
+            <span id="badge-notes-api" class="hud-badge error">—</span>
+            <button id="btn-restart-notes-api" class="btn-deck btn-sm" data-container="notes-api" data-action="restart" title="Restart">↺</button>
+            <button id="btn-stop-notes-api" class="btn-deck btn-sm btn-danger" data-container="notes-api" data-action="stop" title="Stop">■</button>
+            <button id="btn-start-notes-api" class="btn-deck btn-sm" data-container="notes-api" data-action="start" title="Start" style="display:none">▶</button>
+          </div>
+        </div>
+
+        <!-- notes-web container -->
+        <div class="notes-container-row" id="row-notes-web">
+          <div>
+            <div style="font-weight:600;font-size:13px">notes-web</div>
+            <div style="font-size:11px;color:var(--c-text-secondary)">Web frontend · port 4330</div>
+          </div>
+          <div class="flex gap-2 items-center">
+            <span id="badge-notes-web" class="hud-badge error">—</span>
+            <button id="btn-restart-notes-web" class="btn-deck btn-sm" data-container="notes-web" data-action="restart" title="Restart">↺</button>
+            <button id="btn-stop-notes-web" class="btn-deck btn-sm btn-danger" data-container="notes-web" data-action="stop" title="Stop">■</button>
+            <button id="btn-start-notes-web" class="btn-deck btn-sm" data-container="notes-web" data-action="start" title="Start" style="display:none">▶</button>
+          </div>
+        </div>
+
+        <div id="container-action-msg" style="font-size:12px;color:var(--apple-orange);min-height:18px;margin-top:4px"></div>
+
+        <div style="border-top:1px solid var(--c-border);padding-top:12px;margin-top:4px">
+          <button id="btn-open-notes" class="btn-deck" style="width:100%;justify-content:center">
+            Open Notes App ↗
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Sync State raw JSON -->
+    <div class="panel col-4">
+      <div class="panel-header">
+        <div class="panel-title">
+          <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M4 2a1 1 0 011 1v2.101a7.002 7.002 0 0111.601 2.566 1 1 0 11-1.885.666A5.002 5.002 0 005.999 7H9a1 1 0 010 2H4a1 1 0 01-1-1V3a1 1 0 011-1zm.008 9.057a1 1 0 011.276.61A5.002 5.002 0 0014.001 13H11a1 1 0 110-2h5a1 1 0 011 1v5a1 1 0 11-2 0v-2.101a7.002 7.002 0 01-11.601-2.566 1 1 0 01.61-1.276z" clip-rule="evenodd"/></svg>
+          Sync State
+        </div>
+        <button id="refresh-status-btn" class="btn-deck btn-ghost" style="padding:4px 10px;font-size:11px">Refresh</button>
+      </div>
+      <div class="terminal-block" id="sync-state-raw" style="min-height:120px;max-height:180px;margin-top:12px;font-size:11px">
+        Fetching sync/state…
+      </div>
+    </div>
+
+  </div>
+
+  <!-- ── Logs Panel ───────────────────────────────────────────────────────── -->
+  <div class="panel" style="margin-top:20px;padding:20px 24px">
+    <div class="panel-header" style="margin-bottom:16px">
+      <div>
+        <div class="panel-subtitle" style="text-transform:uppercase;font-size:11px;font-weight:600;letter-spacing:0.5px;color:var(--apple-blue)">NOTES // LOG_STREAM</div>
+        <div class="panel-title" style="font-size:18px;margin-top:2px">Application Logs</div>
+      </div>
+      <div class="flex gap-2 items-center">
+        <select id="log-limit-select" class="form-input" style="appearance:auto;border-radius:var(--radius-sm);width:120px">
+          <option value="50">50 Lines</option>
+          <option value="100" selected>100 Lines</option>
+          <option value="200">200 Lines</option>
+          <option value="500">500 Lines</option>
+        </select>
+        <input type="text" id="notes-log-filter" class="form-input" placeholder="Filter logs…" style="border-radius:9999px;padding-left:16px;width:200px" />
+        <button id="fetch-logs-btn" class="btn-deck btn-sm">Refresh</button>
+        <label class="flex items-center gap-2" style="font-size:12px;color:var(--c-text-secondary);cursor:pointer;user-select:none">
+          <input type="checkbox" id="notes-auto-refresh" style="accent-color:var(--apple-blue)" />
+          Auto Live
+        </label>
+      </div>
+    </div>
+
+    <div class="panel-header" style="margin-bottom:8px">
+      <div style="font-size:12px;color:var(--apple-gray)">
+        Log output · <span id="notes-log-stats" style="font-weight:600;color:var(--apple-blue)">Standby</span>
+      </div>
+      <div class="flex gap-2">
+        <button id="clear-notes-log-btn" class="btn-deck btn-ghost" style="padding:4px 10px;font-size:11px;border-radius:var(--radius-sm)">Clear</button>
+        <button id="scroll-notes-log-btn" class="btn-deck btn-ghost" style="padding:4px 10px;font-size:11px;border-radius:var(--radius-sm)">Scroll End</button>
+      </div>
+    </div>
+
+    <div class="terminal-block" id="notes-log-output" style="min-height:400px;max-height:600px;border-color:rgba(255,255,255,0.05)">
+      Click Refresh to load notes app logs.
+    </div>
+  </div>
+
+</DashboardLayout>
+
+<style>
+  .readout-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 6px 0;
+    border-bottom: 1px solid var(--c-border);
+    gap: 8px;
+  }
+  .readout-row:last-child { border-bottom: none; }
+  .readout-label {
+    font-size: 11px;
+    color: var(--c-text-secondary);
+    text-transform: uppercase;
+    letter-spacing: 0.4px;
+    flex-shrink: 0;
+  }
+  .readout-value {
+    font-size: 13px;
+    font-weight: 500;
+    text-align: right;
+  }
+  .notes-container-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 10px 12px;
+    background: var(--c-surface-raised, rgba(255,255,255,0.03));
+    border-radius: var(--radius-sm);
+    border: 1px solid var(--c-border);
+    gap: 8px;
+  }
+</style>
+
+<script>
+  import { api } from '../lib/api.ts';
+  import type { NotesStatus } from '../lib/api.ts';
+
+  // ── State ──────────────────────────────────────────────────────────────────
+  let rawLogLines: string[] = [];
+  let notesAppUrl = '';
+  let pollingInterval: any = null;
+  let statusInterval: any = null;
+
+  // ── Helpers ────────────────────────────────────────────────────────────────
+  function setBadge(id: string, state: string) {
+    const el = document.getElementById(id);
+    if (!el) return;
+    el.textContent = state;
+    el.className = `hud-badge ${state === 'running' ? 'running' : state === 'ok' ? 'running' : 'error'}`;
+  }
+
+  function formatLogLine(line: string): string {
+    const lower = line.toLowerCase();
+    if (lower.includes('err') || lower.includes('fail') || lower.includes('exception')) {
+      return `<span style="color:var(--apple-red);font-weight:600">${line}</span>`;
+    }
+    if (lower.includes('warn')) {
+      return `<span style="color:var(--apple-orange)">${line}</span>`;
+    }
+    if (lower.includes('info') || lower.includes('success') || lower.includes('ok')) {
+      return `<span style="color:var(--apple-green)">${line}</span>`;
+    }
+    if (line.match(/\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}/)) {
+      return line.replace(/^([^\s]+)/, '<span style="color:var(--apple-gray)">$1</span>');
+    }
+    return line;
+  }
+
+  function displayLogs() {
+    const out = document.getElementById('notes-log-output')!;
+    const filter = (document.getElementById('notes-log-filter') as HTMLInputElement).value.toLowerCase().trim();
+    const statsEl = document.getElementById('notes-log-stats')!;
+
+    let filtered = rawLogLines;
+    if (filter) filtered = rawLogLines.filter(l => l.toLowerCase().includes(filter));
+
+    statsEl.textContent = `${filtered.length} Lines`;
+
+    if (filtered.length === 0) {
+      out.innerHTML = `<span style="color:var(--c-text-secondary)">No lines matching filter.</span>`;
+      return;
+    }
+    out.innerHTML = filtered.map(formatLogLine).join('\n');
+  }
+
+  // ── Status fetch ───────────────────────────────────────────────────────────
+  async function fetchStatus() {
+    try {
+      const data: NotesStatus = await api.notes.status();
+      notesAppUrl = data.url;
+
+      // Main badge
+      const mainBadge = document.getElementById('notes-badge')!;
+      if (data.reachable) {
+        mainBadge.textContent = 'Online';
+        mainBadge.className = 'hud-badge running';
+      } else {
+        mainBadge.textContent = 'Offline';
+        mainBadge.className = 'hud-badge error';
+      }
+
+      // Detail fields
+      const appStatus = data.syncState?.status ?? (data.health?.status ?? (data.reachable ? 'ok' : 'unreachable'));
+      const dbStatus  = data.syncState?.database?.status ?? '—';
+      const total     = data.syncState?.notes?.total ?? '—';
+      const sync      = data.syncState?.sync?.status ?? '—';
+
+      (document.getElementById('notes-status-val')!).textContent = appStatus;
+      (document.getElementById('notes-status-val')!).style.color = appStatus === 'ok' ? 'var(--apple-green)' : 'var(--apple-red)';
+      (document.getElementById('notes-db-val')!).textContent = dbStatus;
+      (document.getElementById('notes-db-val')!).style.color = dbStatus === 'ok' ? 'var(--apple-green)' : 'var(--apple-gray)';
+      (document.getElementById('notes-count-val')!).textContent = String(total);
+      (document.getElementById('notes-sync-val')!).textContent = sync;
+      (document.getElementById('notes-url-val')!).textContent = data.url;
+
+      // Raw JSON in terminal block
+      const raw = document.getElementById('sync-state-raw')!;
+      raw.textContent = JSON.stringify(data.syncState ?? data.health ?? { reachable: data.reachable }, null, 2);
+
+    } catch (e: any) {
+      document.getElementById('notes-badge')!.textContent = 'Error';
+      document.getElementById('notes-badge')!.className = 'hud-badge error';
+      document.getElementById('sync-state-raw')!.textContent = `Error: ${e.message}`;
+    }
+  }
+
+  // ── Container status (from docker list) ───────────────────────────────────
+  async function fetchContainerStates() {
+    try {
+      const { containers } = await api.containers.list();
+      for (const name of ['notes-api', 'notes-web'] as const) {
+        const c = containers.find(x => x.name === name || x.name === `/${name}`);
+        const state = c?.state ?? 'not found';
+        setBadge(`badge-${name}`, state);
+
+        const stopBtn  = document.getElementById(`btn-stop-${name}`) as HTMLButtonElement;
+        const startBtn = document.getElementById(`btn-start-${name}`) as HTMLButtonElement;
+        if (stopBtn && startBtn) {
+          if (state === 'running') {
+            stopBtn.style.display = '';
+            startBtn.style.display = 'none';
+          } else {
+            stopBtn.style.display = 'none';
+            startBtn.style.display = '';
+          }
+        }
+      }
+    } catch {/* silently ignore — containers route may be unreachable in dev */}
+  }
+
+  // ── Container action ───────────────────────────────────────────────────────
+  async function handleContainerAction(name: string, action: 'start' | 'stop' | 'restart') {
+    const msgEl = document.getElementById('container-action-msg')!;
+    msgEl.textContent = `Sending ${action} to ${name}…`;
+
+    try {
+      const { containers } = await api.containers.list();
+      const c = containers.find(x => x.name === name || x.name === `/${name}`);
+      if (!c) {
+        msgEl.textContent = `Container "${name}" not found in Docker.`;
+        return;
+      }
+      await api.containers[action](c.id);
+      msgEl.textContent = `✓ ${name} ${action} sent`;
+      setTimeout(() => { msgEl.textContent = ''; }, 3000);
+      await fetchContainerStates();
+      await fetchStatus();
+    } catch (e: any) {
+      msgEl.textContent = `✗ ${e.message}`;
+    }
+  }
+
+  // ── Logs fetch ─────────────────────────────────────────────────────────────
+  async function fetchLogs() {
+    const limit = parseInt((document.getElementById('log-limit-select') as HTMLSelectElement).value);
+    const out = document.getElementById('notes-log-output')!;
+
+    try {
+      const data = await api.notes.logs(limit);
+
+      // Notes app may return { logs: [...] } (structured) or { lines: [...] } (plain)
+      if (data.logs && Array.isArray(data.logs)) {
+        rawLogLines = data.logs.map(entry => {
+          if (typeof entry === 'string') return entry;
+          const ts    = entry.ts    ? `${entry.ts} ` : '';
+          const level = entry.level ? `[${entry.level.toUpperCase()}] ` : '';
+          const msg   = entry.msg   ?? JSON.stringify(entry);
+          return `${ts}${level}${msg}`;
+        });
+      } else if (data.lines && Array.isArray(data.lines)) {
+        rawLogLines = data.lines;
+      } else {
+        rawLogLines = [JSON.stringify(data)];
+      }
+
+      displayLogs();
+      out.scrollTop = out.scrollHeight;
+    } catch (e: any) {
+      out.innerHTML = `<span style="color:var(--apple-red)">Failed to load notes logs: ${e.message}</span>`;
+    }
+  }
+
+  // ── Polling ────────────────────────────────────────────────────────────────
+  function setupLogPolling() {
+    const autoRef = (document.getElementById('notes-auto-refresh') as HTMLInputElement).checked;
+    clearInterval(pollingInterval);
+    if (autoRef) pollingInterval = setInterval(fetchLogs, 5000);
+  }
+
+  // ── Event wiring ───────────────────────────────────────────────────────────
+  document.getElementById('refresh-status-btn')?.addEventListener('click', () => {
+    fetchStatus();
+    fetchContainerStates();
+  });
+
+  document.getElementById('fetch-logs-btn')?.addEventListener('click', fetchLogs);
+  document.getElementById('log-limit-select')?.addEventListener('change', fetchLogs);
+
+  document.getElementById('notes-log-filter')?.addEventListener('input', displayLogs);
+
+  document.getElementById('notes-auto-refresh')?.addEventListener('change', setupLogPolling);
+
+  document.getElementById('clear-notes-log-btn')?.addEventListener('click', () => {
+    rawLogLines = [];
+    displayLogs();
+  });
+
+  document.getElementById('scroll-notes-log-btn')?.addEventListener('click', () => {
+    document.getElementById('notes-log-output')!.scrollTop = 9999999;
+  });
+
+  // Container action buttons
+  document.querySelectorAll('[data-container]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      const el = e.currentTarget as HTMLButtonElement;
+      const container = el.dataset.container!;
+      const action = el.dataset.action as 'start' | 'stop' | 'restart';
+      handleContainerAction(container, action);
+    });
+  });
+
+  // Open notes app link
+  document.getElementById('btn-open-notes')?.addEventListener('click', () => {
+    const url = notesAppUrl || 'http://localhost:4330';
+    window.open(url, '_blank');
+  });
+
+  // ── Boot ───────────────────────────────────────────────────────────────────
+  fetchStatus();
+  fetchContainerStates();
+  // Auto-refresh status every 15s
+  statusInterval = setInterval(() => {
+    fetchStatus();
+    fetchContainerStates();
+  }, 15000);
+</script>
